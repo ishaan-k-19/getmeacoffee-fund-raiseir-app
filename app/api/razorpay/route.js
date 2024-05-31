@@ -12,7 +12,7 @@ export const POST = async (req) =>{
 
     let p = await Payment.findOne({oid: body.razorpay_order_id})
     if(!p){
-        return NextResponse.json({sunccess: false, message:"Order Id not found"})
+        return NextResponse.json({success: false, message:"Order Id not found"})
     }
     // fetch the secret of the user who is getting payment
     let user = await User.findOne({username: p.to_user})
