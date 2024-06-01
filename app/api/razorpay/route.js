@@ -19,7 +19,7 @@ export const POST = async (req) =>{
     const secret = user.razorpaysecret
 
     // Verify tge payment
-    let xx = validatePaymentVerification({"order_id": body.razorpay_order_id, "payment_id": body.razorpay_payment_id}, body.razorpay_signature, process.env.KEY_SECRET)
+    let xx = validatePaymentVerification({"order_id": body.razorpay_order_id, "payment_id": body.razorpay_payment_id}, body.razorpay_signature, secret)
 
     if(xx){
         const updatedPayment = await Payment.findOneAndUpdate({oid: body.razorpay_order_id}, {done:"true"}, {new: true})
