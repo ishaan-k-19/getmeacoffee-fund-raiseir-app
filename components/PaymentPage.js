@@ -59,8 +59,8 @@ const PaymentPage = ({ username }) => {
         var options = {
             "key": currentUser.razorpayid, // Enter the Key ID generated from the Dashboard
             "amount": amount, 
-            "currency": "INR",
-            "name": "Get Me A Chai", //your business name
+            "currency": "CAD",
+            "name": "Get Me A Coffee", //your business name
             "description": "Test Transaction",
             "image": "https://example.com/your_logo",
             "order_id": orderId, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1

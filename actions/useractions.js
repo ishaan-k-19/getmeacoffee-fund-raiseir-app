@@ -16,7 +16,7 @@ export const initiate = async (amount, to_username, paymentform) => {
 
     let options = {
         amount: Number.parseInt(amount),
-        currency: "INR",
+        currency: "CAD",
     }
     let x = await instance.orders.create(options)
 

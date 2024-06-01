@@ -13,7 +13,7 @@ const Dashboard = () => {
   const [form, setform] = useState({})
 
   useEffect(() => {
-    document.title = "Dashboard - Get Me A Chai"
+    document.title = "Dashboard - Get Me A Coffee"
     if (!session) {
       router.push('/login')
     }
