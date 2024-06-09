@@ -1,6 +1,4 @@
 "use server"
-
-import Razorpay from "razorpay"
 import Payment from "@/models/Payment"
 import connectDB from "@/db/connectDb"
 import User from "@/models/User"
@@ -10,17 +8,20 @@ export const initiate = async (amount, to_username, paymentform) => {
     await connectDB();
     // fetch the secret of the user who is getting payment
     let user = await User.findOne({username: to_username})
-    const secret = user.rozorpaysecret
 
-    var instance = new Razorpay({ key_id: user.razorpayid, key_secret: secret})
+    const stripe = require('stripe')('sk_test_51PMMogAulClHGvROqEi2WHz7X3NxoEeKm5Nc64jUw8wyLmudrk9OPjeZkQKJ4vLkqmpRB93qiGfv8s1x1fzSbFfg00OhwLdO0c');
+
 
     let options = {
-        amount: Number.parseInt(amount),
-        currency: "INR",
+        "name": 'Get Me A Coffee',
+        "default_price_data": {
+            "currency": 'cad',
+            "unit_amount_decimal": amount
+        }
     }
-    let x = await instance.orders.create(options)
+    let x = await stripe.products.create(options)
 
-    await Payment.create({oid: x.id, amount:amount/100, to_user: to_username, name: paymentform.name, message: paymentform.message})
+    await Payment.create({oid: x.id, amount: amount, to_user: to_username, name: paymentform.name, message: paymentform.message})
 
     return x
 
@@ -49,7 +50,7 @@ export const updateProfile = async (data, oldusername) =>{
         }
         await User.updateOne({email:ndata.email}, ndata)
         // Now update all the usernames in the Payments table
-        await Payment.updateMany({to_user:oldusername}, {to_user: ndata.username})
+        await Payment.updateMany({to_user:oldusername}, {to_user: ndata.username});
     }
     else{
 

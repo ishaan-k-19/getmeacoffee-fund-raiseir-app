@@ -11,6 +11,8 @@ const Dashboard = () => {
   const { data: session, update } = useSession();
   const router = useRouter();
   const [form, setform] = useState({})
+  const [key, setKey] = useState()
+  
 
   useEffect(() => {
     document.title = "Dashboard - Get Me A Chai"
@@ -27,21 +29,39 @@ const Dashboard = () => {
 
   const handleChange = (e) => {
     setform({ ...form, [e.target.name]: e.target.value })
+    if (e.target.name === 'stripesecret') {
+      setKey(e.target.value);
+    }
   }
 
   const handleSubmit = async (e) => {
     let a = await updateProfile(e, session.user.name)
-    toast('Profile updated!', {
-      position: "top-right",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-      transition: Bounce,
+      const userId = session.user.name;
+      const webhookResponse = await fetch('http://localhost:3000/api/create-webhook/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, key}),
       });
+
+      if (!webhookResponse.ok) {
+        const text = await webhookResponse.text();
+        throw new Error(`Error: ${webhookResponse.status} - ${text}`);
+      }
+      alert('User registered and webhook created successfully');
+      toast('Profile updated!', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+        });
+    
   }
 
 
@@ -164,11 +184,11 @@ const Dashboard = () => {
           <input
             onChange={handleChange}
             type="text"
-            id="razorpayid"
+            id="stripeid"
             className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-sm-light"
             placeholder=""
-            value={form.razorpayid ? form.razorpayid : ""}
-            name="razorpayid"
+            value={form.stripeid ? form.stripeid : ""}
+            name="stripeid"
             required
             />
         </div>
@@ -182,11 +202,11 @@ const Dashboard = () => {
           <input
             onChange={handleChange}
             type="password"
-            id="rozorpaysecret"
+            id="stripesecret"
             className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-sm-light"
             placeholder=""
-            value={form.rozorpaysecret ? form.rozorpaysecret : ""}
-            name="rozorpaysecret"
+            value={form.stripesecret ? form.stripesecret : ""}
+            name="stripesecret"
             required
             />
         </div>

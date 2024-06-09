@@ -9,9 +9,12 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Bounce } from 'react-toastify'
 import { useRouter } from 'next/navigation'
+import { loadStripe } from '@stripe/stripe-js';
+
 
 const PaymentPage = ({ username }) => {
 
+    const stripePromise = loadStripe('pk_test_51PMKqjAXHA9mvESMVcopDOrfXu8rq4BRmEk2d8TPLYgSxom4lJ8JayHEiu7CjPDtCEbmei7b54FSJO5djtWWCnUV00y7V0IAm9');
     const [paymentform, setpaymentform] = useState({name:'', message:'', amount:''})
     const [currentUser, setcurrentUser] = useState({})
     const [payments, setPayments] = useState([])
@@ -52,33 +55,97 @@ const PaymentPage = ({ username }) => {
     }
 
 
-    const pay = async (amount) => {
+    const handleDonate = async (amount) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ amount, username}),
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Error: ${response.status} - ${text}`);
+            }
+
+            const { url } = await response.json();
+
+            // Redirect to Stripe Checkout using the URL
+            window.location.href = url;
+        } catch (error) {
+            console.error('Failed to create checkout session:', error);
+        }
+    };
+
+
+    const pay = async (amount,e) => {
+        const stripe = require('stripe')('sk_test_51PMMogAulClHGvROqEi2WHz7X3NxoEeKm5Nc64jUw8wyLmudrk9OPjeZkQKJ4vLkqmpRB93qiGfv8s1x1fzSbFfg00OhwLdO0c');
 
         let a = await initiate(amount, username, paymentform)
-        let orderId = a.id
-        var options = {
-            "key": currentUser.razorpayid, // Enter the Key ID generated from the Dashboard
-            "amount": amount, 
-            "currency": "INR",
-            "name": "Get Me A Chai", //your business name
-            "description": "Test Transaction",
-            "image": "https://example.com/your_logo",
-            "order_id": orderId, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
-            "callback_url": `${process.env.NEXT_PUBLIC_PORT}/api/razorpay`,
-            "prefill": { //We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
-                "name": "Gaurav Kumar", //your customer's name
-                "email": "gaurav.kumar@example.com",
-                "contact": "9000090000" //Provide the customer's phone number for better conversion rates 
+        let priceID = a.default_price
+
+        const data = await fetch('/api/payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
             },
-            "notes": {
-                "address": "Razorpay Corporate Office"
-            },
-            "theme": {
-                "color": "#3399cc"
-            }
-        }
-        var rzp1 = new Razorpay(options);
-        rzp1.open();
+            body: JSON.stringify({
+              priceId: priceID, // Replace with your data
+            }),
+          });
+          window.location.assign(data)
+        
+        
+
+        // try {
+        //     // Create Checkout Sessions from body params.
+        //     const session = await stripe.checkout.sessions.create({
+        //       "line_items": [
+        //         {
+        //           // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+        //           "price": priceID,
+        //           "quantity": 1,
+        //         },
+        //       ],
+        //       mode: 'payment',
+        //       return_url: `${process.env.NEXT_PUBLIC_PORT}/api/stripe`,
+        //     });
+        //   } catch (err) {
+        //     console.error(err)
+        //   }
+        
+        // var options = {
+        //     "key": currentUser.razorpayid, // Enter the Key ID generated from the Dashboard
+        //     "amount": amount, 
+        //     "currency": "INR",
+        //     "name": "Get Me A Chai", //your business name
+        //     "description": "Test Transaction",
+        //     "image": "https://example.com/your_logo",
+        //     "order_id": orderId, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+        //     "callback_url": `${process.env.NEXT_PUBLIC_PORT}/api/razorpay`,
+        //     "prefill": { //We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
+        //         "name": "Gaurav Kumar", //your customer's name
+        //         "email": "gaurav.kumar@example.com",
+        //         "contact": "9000090000" //Provide the customer's phone number for better conversion rates 
+        //     },
+        //     "notes": {
+        //         "address": "Razorpay Corporate Office"
+        //     },
+        //     "theme": {
+        //         "color": "#3399cc"
+        //     }       
+
+        //         "name": "Get Me A Coffee",
+        //         "default_price_data": {
+        //             "currency": 'cad',
+        //             "unit_amount_decimal": amount
+        //         },
+        //         "url": `${process.env.NEXT_PUBLIC_PORT}`
+        // }
+        // var rzp1 = await stripe.products.create(options);
+        // console.log(rzp1)
     }
 
 
@@ -144,12 +211,12 @@ const PaymentPage = ({ username }) => {
                             <input onChange={handleChange} type="text" className="w-full p-3 rounded-lg bg-neutral-600" placeholder="Enter Name" value={paymentform.name} name='name' />
                             <input onChange={handleChange} type="text" className="w-full p-3 rounded-lg bg-neutral-600" placeholder="Enter Message" value={paymentform.message} name='message' />
                             <input onChange={handleChange} type="number" className="w-full p-3 rounded-lg bg-neutral-600" placeholder="Enter Amount" value={paymentform.amount} name='amount' />
-                            <button type="button" onClick={() => pay(paymentform.amount * 100)} className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-3 text-center me-2 mb-2 disabled:from-slate-300 disabled:to-neutral-600 w-full" disabled={paymentform.name?.length < 3 || paymentform.message?.length < 4 || paymentform.amount?.length < 1}>Pay</button>
+                            <button type="button" onClick={() => handleDonate(paymentform.amount)} className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-3 text-center me-2 mb-2 disabled:from-slate-300 disabled:to-neutral-600 w-full" disabled={paymentform.name?.length < 3 || paymentform.message?.length < 4 || paymentform.amount?.length < 1}>Pay</button>
                         </div>
                         <div className="flex gap-2 mt-5 flex-col md:flex-row">
-                            <button className="bg-neutral-800 border-2 border-lime-400 p-3 rounded-lg hover:bg-lime-500" onClick={() => pay(1000)}>Pay $10</button>
-                            <button className="bg-neutral-800 border-2 border-yellow-400 p-3 rounded-lg hover:bg-yellow-500" onClick={() => pay(2000)}>Pay $20</button>
-                            <button className="bg-neutral-800 border-2 border-blue-300 p-3 rounded-lg hover:bg-blue-400" onClick={() => pay(3000)}>Pay $30</button>
+                            <button className="bg-neutral-800 border-2 border-lime-400 p-3 rounded-lg hover:bg-lime-500" onClick={() => handleDonate(10)}>Pay $10</button>
+                            <button className="bg-neutral-800 border-2 border-yellow-400 p-3 rounded-lg hover:bg-yellow-500" onClick={() => handleDonate(20)}>Pay $20</button>
+                            <button className="bg-neutral-800 border-2 border-blue-300 p-3 rounded-lg hover:bg-blue-400" onClick={() => handleDonate(30)}>Pay $30</button>
                         </div>
                     </div>
                 </div>
